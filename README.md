@@ -8,7 +8,9 @@ PywebIO webapp that allows a user to login to their Library of Congress account 
 ### 1. Upon launching the file named `Autotranscriber.py`, you will be asked for four things in sequence from the application:
 
 -Your Library of Congress By the People username and password
+
 -The amount of transcription cycles (total document transcriptions) you would like to perform while running this current instance.
+
 -The time delay (in ms) for each automated Selenium task (will throw an error if below the minimum threshold of
 500ms to prevent arousing suspicion of bot activity).
 
