@@ -27,7 +27,7 @@ PywebIO webapp using Selenium, Pytesseract, and OpenCV libraries that allows a u
 
 ### 2. When the Auto-Transcriber has picked a random archive for you, you must manually pick which document must be transcribed. 
 
-**The Auto-Transcriber is set to be dormant until  . There is a 500 second no-activity timeout toggle; if the user has been idle for 500 seconds or longer, the application will automatically time out and exit.
+**The Auto-Transcriber is set to be dormant until  . There is a 500 second no-activity timeout toggle; if the user has been idle for 500 seconds or longer, the application will automatically time out and exit.**
 
 -Upon reaching a historical document with its transcription field, the Auto-Transcriber will automatically go into fullscreen mode,   This sequence will repeat until the amount of requested transcription cycles has been reached.
 
