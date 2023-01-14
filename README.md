@@ -11,6 +11,8 @@ PywebIO webapp using Selenium, Pytesseract, and OpenCV libraries that allows a u
 
 ![image](https://user-images.githubusercontent.com/90420976/212444545-17365104-f0e1-49e4-8d97-55d6693d066a.png)
 
+![image](https://user-images.githubusercontent.com/90420976/212444706-709ca694-22d6-4101-8c8a-ffe4a7a40b45.png)
+
 
 -The amount of transcription cycles (total document transcriptions) you would like to perform while running this current instance.
 
