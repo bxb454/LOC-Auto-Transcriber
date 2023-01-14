@@ -9,6 +9,9 @@ PywebIO webapp using Selenium, Pytesseract, and OpenCV libraries that allows a u
 
 -Your Library of Congress By the People username and password
 
+![image](https://user-images.githubusercontent.com/90420976/212444545-17365104-f0e1-49e4-8d97-55d6693d066a.png)
+
+
 -The amount of transcription cycles (total document transcriptions) you would like to perform while running this current instance.
 
 -The time delay (in ms) for each automated Selenium task (will throw an error if below the minimum threshold of
