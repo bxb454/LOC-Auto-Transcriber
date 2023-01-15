@@ -1,5 +1,4 @@
 import numpy as np
-from gettext import npgettext
 import pytesseract
 import selenium
 import random
@@ -7,70 +6,102 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-from PIL import Image, ImageEnhance, ImageFilter, ImageColor
+from PIL import Image, ImageEnhance, ImageFilter
 from numpy import array
 import cv2
-#import maskpass
-import getpass
-from pywebio.input import input, FLOAT
 from pywebio.input import input, NUMBER
 from pywebio.input import TEXT
-from pywebio.output import put_text
 from pywebio.input import input, PASSWORD
-from pywebio.input import input_group
 from pywebio.session import set_env
+from pywebio.output import put_image
+from enum import Enum
 
+#Library of Congress Auto-Transcriber by Boris Brondz
+
+#JSON serializable enum with all required paths and class names for the web driver to find elements on the page.
+class webSettings(str, Enum):
+    #Include all xpaths from autoTranscriber.py here
+    #Example:
+    #loginButton = driver.find_element(By.XPATH, '//*[@id="body"]/header/nav/ul/li[1]/a')
+
+    #Include all xpaths from autoTranscriber.py here
+    LOGIN_BUTTON_PATH = '//*[@id="body"]/header/nav/ul/li[1]/a'
+    USERNAME_PATH = '//*[@id="id_username"]'
+    PASSWORD_PATH = '//*[@id="id_password"]'
+    LOGIN_SUBMIT_PATH = '//*[@id="body"]/main/div[2]/div[1]/div/form/div[3]/button'
+    CAMPAIGN_LIST = '//*[@id="nav-menu"]/ul/li[2]/a'
+    NOT_STARTED_BUTTON = '//*[@id="body"]/main/div[2]/div[7]/div/div/a[5]'
+    NEW_COLLECTIONS = '//*[@id="body"]/main/div[2]/div[8]'
+    FULL_SCREEN_BUTTON = '//*[@id="viewer-fullscreen"]/span'
+    TRANSCRIPTION_BOX = '//*[@id="transcription-input"]'
+    SAVE_BUTTON = '//*[@id="save-transcription-button"]'
+    SUBMIT_BUTTON = '//*[@id="submit-transcription-button"]'
+    NEXT_PAGE_BUTTON = '//*[@id="successful-submission-modal"]/div/div/div[3]/p[2]/a'
+
+    #Class names. These will be found by "class name" instead of their xpaths.
+    TRANSCRIPTION_TAGS = 'card-img-container'
+    PAGE_ITEM = 'page-item'
+
+    #Tag names. These will be found by "tag name" instead of their xpaths.
+    HEADER_TAG = 'h6'
+    
+#Library of Congress Autoscriber by Boris Brondz
 
 class AutoTranscriber:
 
     pytesseract.pytesseract.tesseract_cmd = 'C:/Program Files/Tesseract-OCR/tesseract'
 
-    numCycles = 0
-    msDelay = 0
+    numCycles = 100
+    msDelay = 700
 
-    def _init_(self, numCycles, msDelay): 
-        self.numCycles = numCycles
-        self.msDelay = msDelay
+    set_env(title= "LOC Auto-Transcriber")
 
-    set_env(title= "Library of Congress AutoTranscriber")
-
-    #credentials = input_group("Enter your credentials",[
-        #input("Username", name="username"),
-        #input("Password", name="password", type=PASSWORD)
-   # ])
+    def getNumCycles(self):
+        return self.numCycles
 
     def checkValidCycles(numCycles):
         if(numCycles < 1):
             raise Exception("Number of cycles must be greater than 0.")
 
-    name = input("Enter your username", type=TEXT)
-    password = input("Enter your password", type=PASSWORD)
-    numCycles = input("Enter the number of cycles", type=NUMBER, validate= checkValidCycles)
+    def checkValidDelay(msDelay):
+        if(msDelay < 500):
+            raise Exception("Delay must be greater than 500 milliseconds to ensure all webpage content can be loaded in time.")
+
+    #Input user credentials and amount of cycles.
+
+    name = input("Enter your LOC username", type=TEXT)
+    password = input("Enter your LOC password", type=PASSWORD)
+    numCycles = input("Enter the number of transcription cycles", type=NUMBER, validate= checkValidCycles)
+    msDelay = input("Enter the delay between each cycle (in milliseconds)", type=NUMBER, validate= checkValidDelay)
 
     driver = webdriver.Chrome()
+    options = webdriver.ChromeOptions()
+    options.add_experimental_option("useAutomationExtension", False)
+    options.add_experimental_option("excludeSwitches",["enable-automation"])
+    options.add_argument("--start-maximized")
+
     #print(5)
     driver.get('https://crowd.loc.gov/')
     driver.fullscreen_window()
-    driver.implicitly_wait(255)
-    loginButton = driver.find_element(By.XPATH, '//*[@id="body"]/header/nav/ul/li[1]/a')
+    driver.implicitly_wait(msDelay)
+    loginButton = driver.find_element(By.XPATH, webSettings.LOGIN_BUTTON_PATH)
     loginButton.click()
 
-    driver.implicitly_wait(455)
-    userNameField = driver.find_element(By.XPATH, '//*[@id="id_username"]')
-    pwField = driver.find_element(By.XPATH, '//*[@id="id_password"]')
+    driver.implicitly_wait(msDelay)
+    userNameField = driver.find_element(By.XPATH, webSettings.USERNAME_PATH)
+    pwField = driver.find_element(By.XPATH, webSettings.PASSWORD_PATH)
 
     userNameField.send_keys(name)
     pwField.send_keys(password)
-    driver.implicitly_wait(550)
-    driver.find_element(By.XPATH, '//*[@id="body"]/main/div[2]/div[1]/div/form/div[3]/button').click()
-    driver.implicitly_wait(350)
+    driver.implicitly_wait(msDelay)
+    driver.find_element(By.XPATH, webSettings.LOGIN_SUBMIT_PATH).click()
+    driver.implicitly_wait(msDelay)
 
     #Bypass CAPTCHA (not needed currently)
 
-    campaign = driver.find_element(By.XPATH, '//*[@id="nav-menu"]/ul/li[2]/a')
+    campaign = driver.find_element(By.XPATH, webSettings.CAMPAIGN_LIST)
     campaign.click()
-
-    driver.implicitly_wait(300)
+    driver.implicitly_wait(msDelay)
 
     #A list of 10 campaigns are always available under the 'campaigns' section. Query all of them and let the script pick a random one.
 
@@ -80,22 +111,24 @@ class AutoTranscriber:
 
     randomCampaignNum = random.randint(0, 9)
     driver.find_element(By.XPATH, campaignList[randomCampaignNum]).click()
-    driver.implicitly_wait(1500)
+    driver.implicitly_wait(msDelay)
 
     #Automatically go to the "Not started" category to ensure we will only be doing transcriptions. 
 
     driver.find_element(By.XPATH, '//*[@id="body"]/main/div[2]/div[7]/div/div/a[5]').click()
-    driver.implicitly_wait(3800)
+    driver.implicitly_wait(msDelay)
     #There are an indeterminate amount of available "Collections" of documents to transcribe for each available category.
-
 
     pageList = []
     valueList = []
-    newPages = driver.find_elements(By.XPATH, '//*[@id="body"]/main/div[2]/div[8]')
-    driver.implicitly_wait(1000)
+    newPages = driver.find_elements(By.XPATH, webSettings.NEW_COLLECTIONS)
+    driver.implicitly_wait(msDelay)
     newValues = driver.find_elements(By.TAG_NAME, 'h6')
     print(len(newPages))
     print("Boxes amount:" + str(len(newValues)))
+    if(len(newValues) < 1):
+        driver.implicitly_wait(msDelay)
+        driver.back()
     randomVal = random.randint(0, len(newValues) - 1)
     for i in range(len(newValues)):
 
@@ -107,10 +140,10 @@ class AutoTranscriber:
         raise Exception("No incomplete archives found.")
     else:
         #valueList[randomVal].click()
-        driver.implicitly_wait(1500)  
+        driver.implicitly_wait(msDelay)  
 
         page_buttons = []
-        newButtons = driver.find_elements(By.CLASS_NAME, 'page-item')
+        newButtons = driver.find_elements(By.CLASS_NAME, webSettings.PAGE_ITEM)
         if(not newButtons):
                 print("No page buttons found.")
         else:
@@ -120,50 +153,34 @@ class AutoTranscriber:
                     #print(page_buttons[i].text)
                     if(i == randomPage):
                         newButtons[i].click()
-                        driver.implicitly_wait(500)
+                        driver.implicitly_wait(msDelay)
                         print("Page clicked")
     
 #Once again, we need to pick a random page to transcribe. This time, we will need to pick a random page from the list of pages that are available for transcription.
 #We will need to pick a random page from the list of pages that are available for transcription.
-
-    newValue2 = driver.find_elements(By.TAG_NAME, 'h6')
-    randomPage = random.randint(0, len(newValue2) - 1)
-    for i in range(len(newValue2)):
-        #print(newValue2[i].text)
-        if(i == randomVal):
-            newValue2[i].click()
-    driver.implicitly_wait(1500)
-    print("Page clicked")
+    #driver.implicitly_wait(2500)
 
 #Pick a random page to transcribe. This time, we will need to pick a random page from the list of pages that are available for transcription.
-
-    transcribeTags = driver.find_elements(By.CLASS_NAME, 'card-img-container')
-    randomTag = random.randint(0, len(transcribeTags) - 1)
-    for i in range(len(transcribeTags)):
-        if(i == randomTag):
-            transcribeTags[i].click()
-            driver.implicitly_wait(1500)
-            print("Tag clicked")
-
-
-    def transcribeLoop(self, numPages):
+    driver.implicitly_wait(msDelay)
+    def transcribeLoop(self, numCycles):
         stringTexts = []
-        for i in range(numPages):
-            self.driver.implicitly_wait(2500)
+        for i in range(numCycles):
+            self.driver.implicitly_wait(self.msDelay)
+            #wait = WebDriverWait(self.driver, 5000)
+            WebDriverWait(self.driver, timeout=500).until(EC.element_to_be_clickable((By.XPATH, '//*[@id="viewer-fullscreen"]')))
+            #wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="viewer-fullscreen"]/span')))
             self.driver.find_element(By.XPATH, '//*[@id="viewer-fullscreen"]/span').click()
-            self.driver.implicitly_wait(5500)
-            self.driver.implicitly_wait(3500)
+
+            self.driver.implicitly_wait(self.msDelay)
             self.driver.save_screenshot('num' + str(i) + '.png')
-            self.driver.implicitly_wait(6500)
-            self.driver.implicitly_wait(3500)
+            put_image('num' + str(i) + '.png')
+            self.driver.implicitly_wait(self.msDelay)
             self.driver.find_element(By.XPATH, '//*[@id="viewer-fullscreen"]/span').click()
-            self.driver.implicitly_wait(3500)
-            self.driver.implicitly_wait(3500)
+            self.driver.implicitly_wait(self.msDelay)
+
+            #Use cv2 and pytesseract to convert captured image to string data.
     
             img = cv2.imread('num' + str(i) + '.png', 0)
-            #grey = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-            #blur = cv2.GaussianBlur(grey, (5, 5), 0)
-            #thresh = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
             kernel = np.ones((1,1),np.uint8)
             opening = cv2.morphologyEx(img, cv2.MORPH_OPEN, kernel, iterations=2)
             #invert = 255 - opening
@@ -175,98 +192,21 @@ class AutoTranscriber:
             img = img.convert('1')
             img.save('num' + str(i) + '.png')
 
+            #Send string data to text field, save, submit, and look for another document.
+
             transcribedText = data
             stringTexts.append(transcribedText)
             textField = self.driver.find_element(By.XPATH,'//*[@id="transcription-input"]')
             textField.send_keys(stringTexts[i])
-            self.driver.implicitly_wait(1500)
+            self.driver.implicitly_wait(self.msDelay)
             self.driver.find_element(By.XPATH, '//*[@id="save-transcription-button"]').click()
-            self.driver.implicitly_wait(1500)
+            self.driver.implicitly_wait(self.msDelay)
             self.driver.find_element(By.XPATH, '//*[@id="submit-transcription-button"]').click()
-            self.driver.implicitly_wait(1500)
+            self.driver.implicitly_wait(self.msDelay)
             self.driver.find_element(By.XPATH, '//*[@id="successful-submission-modal"]/div/div/div[3]/p[2]/a').click()
-
-
-    #Transcription loop
-    index = 0
-    #while(int index < numPages):
     
     #Call the transcribeLoop method
     
 A = AutoTranscriber()
-A.transcribeLoop(2)
-
-        #index += 1
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+A.transcribeLoop(A.getNumCycles())
 
