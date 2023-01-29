@@ -3,7 +3,7 @@ Flask webapp using Selenium, Pytesseract, and the OpenCV API that allows a user 
 
 ## Instructions:
 
-**Note: You will need to have Selenium for Python installed on your desktop for this program to work.**
+**Note: Required libraries are found in `requirements.txt` in this repository.**
 
 ### 1. Upon launching the file named `Autotranscriber.py`, you will be asked for four things in sequence from the application:
 
