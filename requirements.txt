@@ -1,7 +1,8 @@
-Flask==2.2.2
-numpy==1.24.1
-opencv_python==4.7.0.68
-Pillow==9.4.0
-pytesseract==0.3.10
-pywebio==1.7.1
-selenium==4.8.0
+boto3==1.26.165
+botocore==1.29.165
+jmespath==1.0.1
+python-dateutil==2.8.2
+s3transfer==0.6.1
+six==1.16.0
+urllib3==1.26.16
+uuid==1.30
