@@ -1,3 +1,4 @@
+import json
 import numpy as np
 import pytesseract
 import selenium
@@ -9,6 +10,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from PIL import Image, ImageEnhance, ImageFilter
 from numpy import array
 import cv2
+import uuid
 from pywebio import start_server
 from pywebio.input import input, NUMBER
 from pywebio.input import TEXT
@@ -178,11 +180,21 @@ class AutoTranscriber:
             enhancer = ImageEnhance.Contrast(img)
             img = enhancer.enhance(2)
             img = img.convert('1')
-            img.save('num' + str(i) + '.png')
+            #img.save('num' + str(i) + '.png')
 
             #Send string data to text field, save, submit, and look for another document.
             transcribedText = data
             stringTexts.append(transcribedText)
+
+            # Store the transcribed text in DynamoDB
+            response = self.table.put_item(
+                Item={
+                    'id': str(uuid.uuid4()),  # Unique UUID as string
+                    'transcription': stringTexts[i]
+                }
+            )
+            print("PutItem succeeded:" + json.dumps(response, indent=4))
+
             textField = self.driver.find_element(By.XPATH, webSettings.TRANSCRIPTION_BOX)
             textField.send_keys(stringTexts[i])
             self.driver.implicitly_wait(self.msDelay)
