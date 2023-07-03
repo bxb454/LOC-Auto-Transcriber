@@ -1,9 +1,11 @@
 # LOC-Auto-Transcriber
-Flask webapp using Selenium, Pytesseract, and the OpenCV API that allows a user to login to their Library of Congress account to automatically transcribe from a collection of historical documents. User input implemented with the PyWebIO API.
+Flask webapp using Selenium, Pytesseract, and the OpenCV API that allows a user to login to their Library of Congress account to automatically transcribe from a collection of historical documents. User input implemented with PyWebIO.
 
 ## Instructions:
 
-**Note: Required libraries are found in `requirements.txt` in this repository.**
+### To run this application, run this Docker command on your local CLI:
+
+`docker run -p 4000:80 auto-transcriber`
 
 ### 1. Upon launching the file named `Autotranscriber.py`, you will be asked for four things in sequence from the application:
 
@@ -30,6 +32,8 @@ Flask webapp using Selenium, Pytesseract, and the OpenCV API that allows a user 
 **The Auto-Transcriber is set to be dormant until you pick a document to transcribe. There is a 500 second timeout toggle; if the user has been idle for 500 seconds or longer, the application will automatically time out and exit.**
 
 Upon reaching a historical document with its transcription field, the Auto-Transcriber will automatically go into fullscreen mode, and begin to transcribe documents. This sequence will repeat until the amount of requested transcription cycles has been reached.
+
+ All transcription sequences are logged into an AWS DynamoDB database with a unique UUID assigned to each successful transcription.
 
 
 
